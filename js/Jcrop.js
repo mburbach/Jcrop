@@ -1,5 +1,4 @@
-/*! Jcrop.js v2.0.4 - build: 20151117
- *  @copyright 2008-2015 Tapmodo Interactive LLC
+/*! Jcrop.js v2.0.5 - build: 20170207
  *  @license Free software under MIT License
  *  @website http://jcrop.org/
  **/
@@ -1210,7 +1209,8 @@ Jcrop.registerStageType('Canvas',CanvasStage);
         this.core.container.off(this.eventName);
       },
       // }}}
-      // enable: function(){{{
+      // KeyCodes
+      // enable: function(){{{     
       enable: function(){
         var t = this, m = t.core;
         m.container.on(t.eventName,function(e){
@@ -1220,17 +1220,36 @@ Jcrop.registerStageType('Canvas',CanvasStage);
             return true;
 
           switch(e.keyCode){
-            case 37: m.nudge(-nudge,0); break;
-            case 38: m.nudge(0,-nudge); break;
-            case 39: m.nudge(nudge,0); break;
-            case 40: m.nudge(0,nudge); break;
-
-            case 46:
-            case 8:
+          
+            //move selection 
+            case 37: m.nudge(-nudge,0); break;// left arrow
+            case 38: m.nudge(0,-nudge); break;// up arrow
+            case 39: m.nudge(nudge,0); break; // right arrow 
+            case 40: m.nudge(0,nudge); break; // down arrow
+            //delete selection
+            case 46: // delete
+            case 8:  // backspace
+            case 109: // -
               m.requestDelete();
               return false;
               break;
-
+            // in the future, it will be resize the selection0  
+            case 65: //a
+            case 87: //w
+            case 83: //s
+            case 68: //d
+            	break;
+            //for random events :)
+            case 9: //tab
+            case 13: //enter
+            	break;
+            //create new Selection
+            case 106: //+
+            case 171: //+ on German Layout
+            case 78: // n
+            	var sel = m.newSelection();
+            	m.setSelect([ 20, 20, 10, 10 ]);
+            	break;
             default:
               if (t.debug) console.log('keycode: ' + e.keyCode);
               break;
@@ -1262,6 +1281,7 @@ Jcrop.registerStageType('Canvas',CanvasStage);
       bgColor: null,
       bgOpacity: null,
       last: null,
+      identifier: null,
 
       state: null,
       active: true,
@@ -1275,7 +1295,7 @@ Jcrop.registerStageType('Canvas',CanvasStage);
     prototype: {
       // init: function(core){{{
       init: function(core){
-        this.core = core;
+        this.core = core; 
         this.startup();
         this.linked = this.core.opt.linked;
         this.attach();
@@ -1290,8 +1310,9 @@ Jcrop.registerStageType('Canvas',CanvasStage);
       // }}}
       // startup: function(){{{
       startup: function(){
-        var t = this, o = t.core.opt;
+        var t = this, o = t.core.opt;        
         $.extend(t,Selection.defaults);
+        t.identifier = 'selection'+t.core.ui.multi.length;
         t.filter = t.core.getDefaultFilters();
 
         t.element = $('<div />').addClass(o.css_selection).data({ selection: t });
@@ -1457,6 +1478,17 @@ Jcrop.registerStageType('Canvas',CanvasStage);
         return this;
       },
       // }}}
+      // allowDelete: function(v){{{
+      allowDelete: function(v){
+          var t = this, o = t.core.opt;
+          if (v == undefined) v = t.canDelete;
+
+          if (v && t.canDelete) t.element.removeClass(o.css_noresize);
+            else t.element.addClass(o.css_noresize);
+
+          return this;
+        },
+      // }}}
       // remove: function(){{{
       remove: function(){
         this.element.trigger('cropremove',this);
@@ -1554,7 +1586,7 @@ Jcrop.registerStageType('Canvas',CanvasStage);
         rv.y2 = rv.y + h;
         rv.w = w;
         rv.h = h;
-
+        rv.identifier = this.identifier;        
         return rv;
       },
       //}}}
@@ -1954,7 +1986,7 @@ Jcrop.registerStageType('Canvas',CanvasStage);
         that.distOffset = rel[3];
         that.dragOffset = [rel[0],rel[1]];
         that.core.container.trigger('croprotstart');
-
+        
         $(window)
           .on('mousemove.dialdrag',mouseMove)
           .on('mouseup.dialdrag',mouseUp);
@@ -2190,7 +2222,6 @@ Jcrop.registerStageType('Canvas',CanvasStage);
     newSelection: function(sel){
       if (!sel)
         sel = new this.opt.selectionComponent();
-
       sel.init(this);
       this.setSelection(sel);
 
@@ -2321,7 +2352,8 @@ Jcrop.registerStageType('Canvas',CanvasStage);
     // }}}
     // requestDelete: function(){{{
     requestDelete: function(){
-      if ((this.ui.multi.length > 1) && (this.ui.selection.canDelete))
+      if ((this.ui.multi.length > 1) && (this.ui.selection.canDelete)) // theres a bug, if you will allowed do delete all selections, i will fix it later
+      //if (this.ui.selection.canDelete) 
         return this.deleteSelection();
     },
     // }}}
